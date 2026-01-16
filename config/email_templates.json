@@ -1,0 +1,18 @@
+{
+  "daily_reminder": {
+    "subject": "签到提醒",
+    "body": "亲爱的 {{.Username}}，\n\n这是一个温馨的提醒，请记得今天签到！\n\n连续签到可以获得更好的体验哦。\n\n祝好！\n签到系统"
+  },
+  "hourly_reminder": {
+    "subject": "签到提醒",
+    "body": "亲爱的 {{.Username}}，\n\n签到时间到了！\n\n请尽快完成签到。\n\n祝好！\n签到系统"
+  },
+  "missed_checkin_warning": {
+    "subject": "缺签提醒",
+    "body": "亲爱的 {{.Username}}，\n\n我们发现您已经连续两天没有签到。\n\n为了保持良好的签到习惯，请记得今天进行签到。\n\n祝好！\n签到系统"
+  },
+  "welcome": {
+    "subject": "欢迎加入签到系统",
+    "body": "亲爱的 {{.Username}}，\n\n欢迎您加入我们的签到系统！\n\n您的账户已经成功创建，现在可以开始使用签到功能了。\n\n如有任何问题，请随时联系我们。\n\n祝好！\n签到系统团队"
+  }
+}
