@@ -14,6 +14,7 @@
             <a class="navbar-brand" href="/">签到系统</a>
             <div class="navbar-nav ms-auto">
                 <span class="navbar-text me-3">欢迎, {{.username}}</span>
+                <a style="color: crimson;" class="nav-link" href="#" onclick="cancel()">注销</a>
                 <a class="nav-link" href="#" onclick="logout()">退出</a>
             </div>
         </div>
@@ -85,8 +86,25 @@
                                 <label for="reminderInterval" class="form-label">提醒间隔（小时）</label>
                                 <input type="number" class="form-control" id="reminderInterval" min="1" max="168">
                             </div>
-                            <button type="submit" class="btn btn-primary">保存设置</button>
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-primary">保存设置</button>
+                                <button type="button" class="btn btn-secondary" onclick="sendTestEmail()">发送测试邮件</button>
+                            </div>
                         </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">邮箱验证状态</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="emailVerificationStatus" class="mb-3">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">加载中...</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -149,6 +167,26 @@
         </div>
     </div>
 
+    <!-- 注销确认模态框 -->
+    <div class="modal fade" id="cancelModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">确认注销账户</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-danger">警告：注销账户将永久删除您的所有数据，包括签到记录和个人信息，此操作不可恢复。</p>
+                    <p>您确定要继续注销账户吗？</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-danger" onclick="confirmCancel()">确认注销</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast 提示 -->
     <div class="toast-container position-fixed bottom-0 end-0 p-3">
         <div id="toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
@@ -164,11 +202,15 @@
     <script>
         let checkInModal;
         
+        let cancelModal;
+
         document.addEventListener('DOMContentLoaded', function() {
             checkInModal = new bootstrap.Modal(document.getElementById('checkInModal'));
+            cancelModal = new bootstrap.Modal(document.getElementById('cancelModal'));
             loadCheckInStatus();
             loadReminderSettings();
             loadCheckInHistory();
+            loadUserProfile();
             
             // 监听提醒频率变化
             document.getElementById('reminderFrequency').addEventListener('change', function() {
@@ -213,6 +255,37 @@
             toast.show();
         }
         
+        // 显示注销确认模态框
+        function cancel() {
+            cancelModal.show();
+        }
+
+        // 确认注销账户
+        async function confirmCancel() {
+            try {
+                const response = await fetch('/api/cancel', {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showToast('账户注销成功', 'success');
+                    cancelModal.hide();
+                    setTimeout(() => {
+                        localStorage.removeItem('user');
+                        window.location.href = '/register';
+                    }, 1500);
+                } else {
+                    showToast(data.error || '账户注销失败', 'error');
+                }
+            } catch (error) {
+                console.error('注销错误:', error);
+                showToast('网络错误，请稍后重试', 'error');
+            }
+        }
+
         async function logout() {
             try {
                 await fetch('/api/logout', {
@@ -391,6 +464,76 @@
                 container.innerHTML = html;
             } else {
                 container.innerHTML = '<p class="text-muted">暂无签到记录</p>';
+            }
+        }
+        
+        async function sendTestEmail() {
+            try {
+                const response = await fetch('/api/test-email', getFetchOptions('POST'));
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showToast(data.message, 'success');
+                } else {
+                    showToast(data.error || '发送测试邮件失败', 'error');
+                }
+            } catch (error) {
+                showToast('网络错误，请稍后重试', 'error');
+            }
+        }
+
+        async function sendVerificationEmail() {
+            try {
+                const response = await fetch('/api/send-verification', getFetchOptions('POST'));
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showToast(data.message, 'success');
+                } else {
+                    showToast(data.error || '发送验证邮件失败', 'error');
+                }
+            } catch (error) {
+                showToast('网络错误，请稍后重试', 'error');
+            }
+        }
+
+        async function loadUserProfile() {
+            try {
+                const response = await fetch('/api/profile', getFetchOptions('GET'));
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const user = data.user;
+                    const statusElement = document.getElementById('emailVerificationStatus');
+                    
+                    if (user.email_verified) {
+                        statusElement.innerHTML = `
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                <span>您的邮箱 <strong>${user.email}</strong> 已验证</span>
+                            </div>
+                        `;
+                    } else {
+                        statusElement.innerHTML = `
+                            <div class="d-flex flex-column">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>
+                                    <span>您的邮箱 <strong>${user.email}</strong> 尚未验证</span>
+                                </div>
+                                <p class="text-sm text-muted mb-3">请检查您的邮箱，点击验证链接完成验证。</p>
+                                <button class="btn btn-primary btn-sm" onclick="sendVerificationEmail()">
+                                    <i class="bi bi-envelope-arrow-right me-1"></i> 重新发送验证邮件
+                                </button>
+                            </div>
+                        `;
+                    }
+                }
+            } catch (error) {
+                console.error('加载用户资料失败:', error);
+                const statusElement = document.getElementById('emailVerificationStatus');
+                statusElement.innerHTML = '<p class="text-danger">加载邮箱验证状态失败</p>';
             }
         }
     </script>

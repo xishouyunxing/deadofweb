@@ -8,16 +8,19 @@ import (
 )
 
 type User struct {
-	ID        uint           `json:"id" gorm:"primaryKey"`
-	Username  string         `json:"username" gorm:"uniqueIndex;not null"`
-	Email     string         `json:"email" gorm:"uniqueIndex;not null"`
-	Password  string         `json:"-" gorm:"not null"`
-	CreatedAt time.Time      `json:"created_at"`
-	UpdatedAt time.Time      `json:"updated_at"`
-	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
+	ID                         uint           `json:"id" gorm:"primaryKey"`
+	Username                   string         `json:"username" gorm:"uniqueIndex;not null"`
+	Email                      string         `json:"email" gorm:"uniqueIndex;not null"`
+	Password                   string         `json:"-" gorm:"not null"`
+	EmailVerified              bool           `json:"email_verified" gorm:"default:false"`
+	VerificationToken          string         `json:"-" gorm:"size:255"`
+	VerificationTokenExpiresAt time.Time      `json:"-"`
+	CreatedAt                  time.Time      `json:"created_at"`
+	UpdatedAt                  time.Time      `json:"updated_at"`
+	DeletedAt                  gorm.DeletedAt `json:"-" gorm:"index"`
 
-	CheckIns        []CheckIn        `json:"checkins,omitempty" gorm:"foreignKey:UserID"`
-	CheckInReminder CheckInReminder  `json:"reminder,omitempty" gorm:"foreignKey:UserID"`
+	CheckIns        []CheckIn       `json:"checkins,omitempty" gorm:"foreignKey:UserID"`
+	CheckInReminder CheckInReminder `json:"reminder,omitempty" gorm:"foreignKey:UserID"`
 }
 
 // BeforeCreate GORM钩子，在创建用户前加密密码
@@ -39,9 +42,10 @@ func (u *User) CheckPassword(password string) bool {
 // ToSafeUser 返回不包含敏感信息的用户信息
 func (u *User) ToSafeUser() map[string]interface{} {
 	return map[string]interface{}{
-		"id":         u.ID,
-		"username":   u.Username,
-		"email":      u.Email,
-		"created_at": u.CreatedAt,
+		"id":             u.ID,
+		"username":       u.Username,
+		"email":          u.Email,
+		"email_verified": u.EmailVerified,
+		"created_at":     u.CreatedAt,
 	}
 }

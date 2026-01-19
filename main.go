@@ -71,11 +71,15 @@ func main() {
 	api := r.Group("/api")
 	{
 		// 用户相关
-		api.POST("/register", userHandler.Register)
-		api.POST("/login", userHandler.Login)
-		api.POST("/logout", middleware.AuthMiddleware(), userHandler.Logout)
-		api.GET("/profile", middleware.AuthMiddleware(), userHandler.GetProfile)
-		api.PUT("/profile", middleware.AuthMiddleware(), userHandler.UpdateProfile)
+        api.POST("/register", userHandler.Register)
+        api.POST("/login", userHandler.Login)
+        api.GET("/verify-email", userHandler.VerifyEmail)
+        api.POST("/logout", middleware.AuthMiddleware(), userHandler.Logout)
+        api.GET("/profile", middleware.AuthMiddleware(), userHandler.GetProfile)
+        api.PUT("/profile", middleware.AuthMiddleware(), userHandler.UpdateProfile)
+        api.POST("/test-email", middleware.AuthMiddleware(), userHandler.SendTestEmail)
+        api.POST("/cancel", middleware.AuthMiddleware(), userHandler.Cancel)
+        api.POST("/send-verification", middleware.AuthMiddleware(), userHandler.SendVerificationEmail)
 
 		// 签到相关
 		api.POST("/checkin", middleware.AuthMiddleware(), checkInHandler.CheckIn)

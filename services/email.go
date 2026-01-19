@@ -110,6 +110,41 @@ func (e *EmailService) SendMissedCheckInWarning(user *models.User) error {
 	return e.sendEmail(user.Email, subject, body)
 }
 
+// SendTestEmail 发送测试邮件
+func (e *EmailService) SendTestEmail(user *models.User) error {
+	template, exists := e.templates["test_email"]
+	if !exists {
+		return fmt.Errorf("test email template not found")
+	}
+
+	subject, body, err := e.parseTemplate(template, map[string]interface{}{
+		"Username": user.Username,
+	})
+	if err != nil {
+		return err
+	}
+
+	return e.sendEmail(user.Email, subject, body)
+}
+
+// SendEmailVerification 发送邮箱验证邮件
+func (e *EmailService) SendEmailVerification(user *models.User, verificationURL string) error {
+	template, exists := e.templates["email_verification"]
+	if !exists {
+		return fmt.Errorf("email verification template not found")
+	}
+
+	subject, body, err := e.parseTemplate(template, map[string]interface{}{
+		"Username":        user.Username,
+		"VerificationURL": verificationURL,
+	})
+	if err != nil {
+		return err
+	}
+
+	return e.sendEmail(user.Email, subject, body)
+}
+
 // parseTemplate 解析邮件模板
 func (e *EmailService) parseTemplate(emailTemplate config.EmailTemplate, data map[string]interface{}) (subject, body string, err error) {
 	// 解析主题
